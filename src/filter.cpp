@@ -19,10 +19,11 @@ static int32 coeffs[NCOEFFS];
 static uint32 mrindex;
 static uint32 mrratio;
 
+int64 sexyfilter2_acc = 0;
+
 void SexyFilter2(int32 *in, int32 count)
 {
  #ifdef moo
- static int64 acc=0;
  double x,p;
  int64 c;
 
@@ -32,25 +33,25 @@ void SexyFilter2(int32 *in, int32 count)
  c=p*0x100000;
  //printf("%f\n",(double)c/0x100000);
  #endif
- static int64 acc=0;
 
  while(count--)
  {
   int64 dropcurrent;
-  dropcurrent=((*in<<16)-acc)>>3;
+  dropcurrent=((*in<<16)-sexyfilter2_acc)>>3;
 
-  acc+=dropcurrent;
-  *in=acc>>16;
+  sexyfilter2_acc+=dropcurrent;
+  *in=sexyfilter2_acc>>16;
   in++;
-  //acc=((int64)0x100000-c)* *in + ((c*acc)>>20);
-  //*in=acc>>20;
+  //sexyfilter2_acc=((int64)0x100000-c)* *in + ((c*sexyfilter2_acc)>>20);
+  //*in=sexyfilter2_acc>>20;
   //in++;
  }
 }
 
+int64 sexyfilter_acc1 = 0, sexyfilter_acc2 = 0;
+
 void SexyFilter(int32 *in, int32 *out, int32 count)
 {
- static int64 acc1=0,acc2=0;
  int32 mul1,mul2,vmul;
 
  mul1=(94<<16)/FSettings.SndRate;
@@ -64,12 +65,12 @@ void SexyFilter(int32 *in, int32 *out, int32 count)
  while(count)
  {
   int64 ino=(int64)*in*vmul;
-  acc1+=((ino-acc1)*mul1)>>16;
-  acc2+=((ino-acc1-acc2)*mul2)>>16;
+  sexyfilter_acc1+=((ino-sexyfilter_acc1)*mul1)>>16;
+  sexyfilter_acc2+=((ino-sexyfilter_acc1-sexyfilter_acc2)*mul2)>>16;
   //printf("%d ",*in);
   *in=0;
   {
-   int32 t=(acc1-ino+acc2)>>16;
+   int32 t=(sexyfilter_acc1-ino+sexyfilter_acc2)>>16;
    //if(t>32767 || t<-32768) printf("Flow: %d\n",t);
    if(t>32767) t=32767;
    if(t<-32768) t=-32768;

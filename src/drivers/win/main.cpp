@@ -221,6 +221,34 @@ bool SingleInstanceOnly=false; // Enable/disable option
 bool DoInstantiatedExit=false;
 HWND DoInstantiatedExitWindow;
 
+//RunAhead variable
+int RunAheadFrames = 0;
+//#if _DEBUG
+//const bool _debugBuild = true;
+//#else
+//const bool _debugBuild = false;
+//#endif
+//bool SaveStateDebugging = _debugBuild;
+
+class SavestateRamFile
+{
+private:
+	EMUFILE_MEMORY ramFile;
+public:
+	void SaveState() {
+		ramFile.fseek(0, SEEK_SET);
+		FCEUSS_SaveMS(&ramFile, 0);
+	}
+	void LoadState() {
+		ramFile.fseek(0, SEEK_SET);
+		FCEUSS_LoadFP(&ramFile, SSLOADPARAM_NOBACKUP);
+	}
+	vector<u8>& GetVector() {
+		return *ramFile.get_vec();
+	}
+};
+//bool SavestateCompare(SavestateRamFile& savestate1, SavestateRamFile& savestate2);
+
 // Internal functions
 void SetDirs()
 {
@@ -919,6 +947,13 @@ doloopy:
 	UpdateFCEUWindow();
 	if(GameInfo)
 	{
+		SavestateRamFile runaheadSavestate;
+		//SavestateRamFile debugSavestateBefore0;
+		//SavestateRamFile debugSavestateBefore1;
+		//SavestateRamFile debugSavestateBefore2;
+		//SavestateRamFile debugSavestateAfter0;
+		//SavestateRamFile debugSavestateAfter1;
+
 		while(GameInfo)
 		{
 	        uint8 *gfx=0; ///contains framebuffer
@@ -944,9 +979,53 @@ doloopy:
 
 			if(FCEU_LuaFrameskip())
 				skippy = true;
+			
+			//if (SaveStateDebugging)
+			//{
+			//	debugSavestateBefore0.SaveState();
+			//	debugSavestateBefore0.LoadState();
+			//	debugSavestateBefore1.SaveState();
+			//	FCEUI_Emulate(&gfx, &sound, &ssize, 0); //emulate the last frame
+			//	debugSavestateAfter0.SaveState();
+			//	debugSavestateAfter0.LoadState();
+			//	debugSavestateAfter1.SaveState();
+			//	debugSavestateBefore0.LoadState();
+			//	debugSavestateBefore2.SaveState();
 
-			FCEUI_Emulate(&gfx, &sound, &ssize, skippy); //emulate a single frame
-			FCEUD_Update(gfx, sound, ssize); //update displays and debug tools
+			//	//have these savestates now:
+			//	//before0 = initial state
+			//	//before1 = Checking if loading state changes the contents of the next savestate
+			//	//before2 = Checking if RUNNING FRAME changes the contents of the next savestate
+			//	//after0 = State after frame runs
+			//	//after1 = Checking if loading state changes the contents of the next savestate
+
+			//	SavestateCompare(debugSavestateBefore0, debugSavestateBefore1);
+			//	SavestateCompare(debugSavestateBefore1, debugSavestateBefore2);
+
+
+			//}
+
+			//RunAhead
+			if (RunAheadFrames > 0 && skippy == 0)
+			{
+				//runaheadMemoryFile.fseek(0, SEEK_SET);
+				//Run the first frame, then save state
+				FCEUI_Emulate(&gfx, &sound, &ssize, 1);
+				runaheadSavestate.SaveState();
+				//FCEUSS_SaveMS(&runaheadMemoryFile, 0);
+				for (int frameNumber = 1; frameNumber < RunAheadFrames - 1; frameNumber++)
+				{
+					FCEUI_Emulate(&gfx, &sound, &ssize, 1);
+				}
+				FCEUI_Emulate(&gfx, &sound, &ssize, 0); //emulate the last frame
+				FCEUD_Update(gfx, sound, ssize); //update displays and debug tools
+				runaheadSavestate.LoadState();
+			}
+			else 
+			{
+				FCEUI_Emulate(&gfx, &sound, &ssize, skippy); //emulate a single frame
+				FCEUD_Update(gfx, sound, ssize); //update displays and debug tools
+			}
 
 			//mbg 6/30/06 - close game if we were commanded to by calls nested in FCEUI_Emulate()
 			if (closeGame)
@@ -1207,3 +1286,45 @@ char *GetRomPath(bool force)
 
 	return mystring;
 }
+
+void SetRunAheadFrames(int runaheadFrameCount)
+{
+	if (runaheadFrameCount < 0)
+	{
+		runaheadFrameCount = 0;
+	}
+	if (runaheadFrameCount > 16)
+	{
+		runaheadFrameCount = 16;
+	}
+	RunAheadFrames = runaheadFrameCount;
+}
+
+int GetRunAheadFrames()
+{
+	return RunAheadFrames;
+}
+/*
+bool SavestateCompare(SavestateRamFile& savestate1, SavestateRamFile& savestate2)
+{
+	vector<u8>& vec1 = savestate1.GetVector();
+	vector<u8>& vec2 = savestate2.GetVector();
+	size_t size = std::min(vec1.size(), vec2.size());
+	bool success = true;
+	if (vec1.size() != vec2.size())
+	{
+		success = false;
+	}
+	for (size_t i = 0; i < size; i++)
+	{
+		u8 b1 = vec1[i];
+		u8 b2 = vec2[i];
+		if (b1 != b2)
+		{
+			success = false;
+		}
+
+	}
+	return success;
+}
+*/

@@ -469,6 +469,9 @@ void UpdateCheckedMenuItems()
 	//Config - RAM Init SubMenu
 	CheckMenuRadioItem(fceumenu, MENU_RAMINIT_DEFAULT, MENU_RAMINIT_RANDOM, MENU_RAMINIT_DEFAULT + RAMInitOption, MF_BYCOMMAND);
 
+	//Config - RunAhead
+	CheckMenuRadioItem(fceumenu, ID_RUNAHEAD_OFF, ID_RUNAHEAD_8, ID_RUNAHEAD_OFF + GetRunAheadFrames(), MF_BYCOMMAND);
+
 	// Tools Menu
 	CheckMenuItem(fceumenu, MENU_ALTERNATE_AB, GetAutoFireDesynch() ? MF_CHECKED : MF_UNCHECKED);
 	CheckedAutoFirePattern = GetCheckedAutoFirePattern();
@@ -2141,6 +2144,42 @@ LRESULT FAR PASCAL AppWndProc(HWND hWnd,UINT msg,WPARAM wParam,LPARAM lParam)
 			case MENU_RAMINIT_00:
 			case MENU_RAMINIT_RANDOM:
 				RAMInitOption = LOWORD(wParam) - MENU_RAMINIT_DEFAULT;
+				UpdateCheckedMenuItems();
+				break;
+			case ID_RUNAHEAD_OFF:
+				SetRunAheadFrames(0);
+				UpdateCheckedMenuItems();
+				break;
+			case ID_RUNAHEAD_1:
+				SetRunAheadFrames(1);
+				UpdateCheckedMenuItems();
+				break;
+			case ID_RUNAHEAD_2:
+				SetRunAheadFrames(2);
+				UpdateCheckedMenuItems();
+				break;
+			case ID_RUNAHEAD_3:
+				SetRunAheadFrames(3);
+				UpdateCheckedMenuItems();
+				break;
+			case ID_RUNAHEAD_4:
+				SetRunAheadFrames(4);
+				UpdateCheckedMenuItems();
+				break;
+			case ID_RUNAHEAD_5:
+				SetRunAheadFrames(5);
+				UpdateCheckedMenuItems();
+				break;
+			case ID_RUNAHEAD_6:
+				SetRunAheadFrames(6);
+				UpdateCheckedMenuItems();
+				break;
+			case ID_RUNAHEAD_7:
+				SetRunAheadFrames(7);
+				UpdateCheckedMenuItems();
+				break;
+			case ID_RUNAHEAD_8:
+				SetRunAheadFrames(8);
 				UpdateCheckedMenuItems();
 				break;
 			case MENU_DIRECTORIES:
