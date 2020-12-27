@@ -30,6 +30,22 @@ static int32 IRQCount, CycleCount;
 static uint8 *WRAM = NULL;
 static uint32 WRAMSIZE;
 
+static void(*sfun[3]) (void);
+static uint8 vpsg1[8];
+static uint8 vpsg2[4];
+static int32 cvbc[3];
+static int32 vcount[3];
+static int32 dcount[2];
+
+int32 vrc6_saw1phaseacc = 0;
+uint8 vrc6_saw_b3 = 0;
+int32 vrc6_saw_phaseacc = 0;
+uint32 vrc6_saw_duff = 0;
+uint8 vrc6_sawhq_b3 = 0;
+int32 vrc6_sawhq_phaseacc = 0;
+
+
+
 static SFORMAT StateRegs[] =
 {
 	{ prg, 2, "PRG" },
@@ -43,17 +59,20 @@ static SFORMAT StateRegs[] =
 	{ 0 }
 };
 
-static void(*sfun[3]) (void);
-static uint8 vpsg1[8];
-static uint8 vpsg2[4];
-static int32 cvbc[3];
-static int32 vcount[3];
-static int32 dcount[2];
-
 static SFORMAT SStateRegs[] =
 {
 	{ vpsg1, 8, "PSG1" },
 	{ vpsg2, 4, "PSG2" },
+	//additional members for RunAhead sound fix
+	{ cvbc, sizeof(cvbc), "CVBC" },
+	{ vcount, sizeof(vcount), "VCNT" },
+	{ dcount, sizeof(dcount), "DCNT" },
+	{ &vrc6_saw1phaseacc, sizeof(vrc6_saw1phaseacc), "SPH1" },
+	{ &vrc6_saw_b3, sizeof(vrc6_saw1phaseacc), "SB31" },
+	{ &vrc6_saw_phaseacc, sizeof(vrc6_saw1phaseacc), "SPH2" },
+	{ &vrc6_saw_duff, sizeof(vrc6_saw1phaseacc), "SDF1" },
+	{ &vrc6_sawhq_b3, sizeof(vrc6_saw1phaseacc), "SB32" },
+	{ &vrc6_sawhq_phaseacc, sizeof(vrc6_saw1phaseacc), "SPH3" },
 	{ 0 }
 };
 
@@ -209,33 +228,33 @@ static void DoSawV(void) {
 	cvbc[2] = end;
 
 	if (vpsg2[2] & 0x80) {
-		static int32 saw1phaseacc = 0;
+		static int32 vrc6_saw1phaseacc = 0;
 		uint32 freq3;
-		static uint8 b3 = 0;
-		static int32 phaseacc = 0;
-		static uint32 duff = 0;
+		static uint8 vrc6_saw_b3 = 0;
+		static int32 vrc6_saw_phaseacc = 0;
+		static uint32 vrc6_saw_duff = 0;
 
 		freq3 = (vpsg2[1] + ((vpsg2[2] & 15) << 8) + 1);
 
 		for (V = start; V < end; V++) {
-			saw1phaseacc -= nesincsize;
-			if (saw1phaseacc <= 0) {
+			vrc6_saw1phaseacc -= nesincsize;
+			if (vrc6_saw1phaseacc <= 0) {
 				int32 t;
  rea:
 				t = freq3;
 				t <<= 18;
-				saw1phaseacc += t;
-				phaseacc += vpsg2[0] & 0x3f;
-				b3++;
-				if (b3 == 7) {
-					b3 = 0;
-					phaseacc = 0;
+				vrc6_saw1phaseacc += t;
+				vrc6_saw_phaseacc += vpsg2[0] & 0x3f;
+				vrc6_saw_b3++;
+				if (vrc6_saw_b3 == 7) {
+					vrc6_saw_b3 = 0;
+					vrc6_saw_phaseacc = 0;
 				}
-				if (saw1phaseacc <= 0)
+				if (vrc6_saw1phaseacc <= 0)
 					goto rea;
-				duff = (((phaseacc >> 3) & 0x1f) << 4) * 6 / 8;
+				vrc6_saw_duff = (((vrc6_saw_phaseacc >> 3) & 0x1f) << 4) * 6 / 8;
 			}
-			Wave[V >> 4] += duff;
+			Wave[V >> 4] += vrc6_saw_duff;
 		}
 	}
 }
@@ -273,21 +292,19 @@ static void DoSQV2HQ(void) {
 }
 
 static void DoSawVHQ(void) {
-	static uint8 b3 = 0;
-	static int32 phaseacc = 0;
 	int32 V;
 
 	if (vpsg2[2] & 0x80) {
 		for (V = cvbc[2]; V < (int)SOUNDTS; V++) {
-			WaveHi[V] += (((phaseacc >> 3) & 0x1f) << 8) * 6 / 8;
+			WaveHi[V] += (((vrc6_sawhq_phaseacc >> 3) & 0x1f) << 8) * 6 / 8;
 			vcount[2]--;
 			if (vcount[2] <= 0) {
 				vcount[2] = (vpsg2[1] + ((vpsg2[2] & 15) << 8) + 1) << 1;
-				phaseacc += vpsg2[0] & 0x3f;
-				b3++;
-				if (b3 == 7) {
-					b3 = 0;
-					phaseacc = 0;
+				vrc6_sawhq_phaseacc += vpsg2[0] & 0x3f;
+				vrc6_sawhq_b3++;
+				if (vrc6_sawhq_b3 == 7) {
+					vrc6_sawhq_b3 = 0;
+					vrc6_sawhq_phaseacc = 0;
 				}
 			}
 		}

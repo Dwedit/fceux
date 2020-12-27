@@ -764,7 +764,7 @@ static void RDoTriangle(void)
 
  tcout=(tristep&0xF);
  if(!(tristep&0x10)) tcout^=0xF;
- tcout=(tcout*3) << 16;  //(tcout<<1);
+ tcout=(tcout*3) << 16;  //(lq_tcout<<1);
 
  if(!lengthcount[2] || !TriCount)
  {           /* Counter is halted, but we still need to output. */
@@ -773,7 +773,7 @@ static void RDoTriangle(void)
   while(count--)
   {
    //Modify volume based on channel volume modifiers
-   *start += (tcout/256*FSettings.TriangleVolume)&(~0xFFFF);  // TODO OPTIMIZE ME NOW DAMMIT!
+   *start += (lq_tcout/256*FSettings.TriangleVolume)&(~0xFFFF);  // TODO OPTIMIZE ME NOW DAMMIT!
    start++;
   }*/
   int32 cout = (tcout/256*FSettings.TriangleVolume)&(~0xFFFF);
@@ -799,12 +799,12 @@ static void RDoTriangle(void)
  ChannelBC[2]=SOUNDTS;
 }
 
+uint32 lq_tcout = 0;
+int32 lq_triacc = 0;
+int32 lq_noiseacc = 0;
+
 static void RDoTriangleNoisePCMLQ(void)
 {
-   static uint32 tcout=0;
-   static int32 triacc=0;
-   static int32 noiseacc=0;
-
    int32 V;
    int32 start,end;
    int32 freq[2];
@@ -851,7 +851,7 @@ static void RDoTriangleNoisePCMLQ(void)
     nshift=13;
 
 
-   totalout = wlookup2[tcout+noiseout+RawDALatch];
+   totalout = wlookup2[lq_tcout+noiseout+RawDALatch];
 
    if(inie[0] && inie[1])
    {
@@ -859,36 +859,36 @@ static void RDoTriangleNoisePCMLQ(void)
     {
      Wave[V>>4]+=totalout;
 
-    triacc-=inie[0];
-    noiseacc-=inie[1];
+    lq_triacc-=inie[0];
+    lq_noiseacc-=inie[1];
 
-    if(triacc<=0)
+    if(lq_triacc<=0)
     {
      rea:
-     triacc+=freq[0]; //t;
+     lq_triacc+=freq[0]; //t;
      tristep=(tristep+1)&0x1F;
-     if(triacc<=0) goto rea;
-     tcout=(tristep&0xF);
-     if(!(tristep&0x10)) tcout^=0xF;
-     tcout=tcout*3;
-      totalout = wlookup2[tcout+noiseout+RawDALatch];
+     if(lq_triacc<=0) goto rea;
+     lq_tcout=(tristep&0xF);
+     if(!(tristep&0x10)) lq_tcout^=0xF;
+     lq_tcout=lq_tcout*3;
+      totalout = wlookup2[lq_tcout+noiseout+RawDALatch];
     }
 
-    if(noiseacc<=0)
+    if(lq_noiseacc<=0)
     {
      rea2:
         //used to added <<(16+2) when the noise table
         //values were half.
      if(PAL)
-       noiseacc+=NoiseFreqTablePAL[PSG[0xE]&0xF]<<(16+1);
+       lq_noiseacc+=NoiseFreqTablePAL[PSG[0xE]&0xF]<<(16+1);
  	 else
-       noiseacc+=NoiseFreqTableNTSC[PSG[0xE]&0xF]<<(16+1);
+       lq_noiseacc+=NoiseFreqTableNTSC[PSG[0xE]&0xF]<<(16+1);
      nreg=(nreg<<1)+(((nreg>>nshift)^(nreg>>14))&1);
      nreg&=0x7fff;
      noiseout=amptab[(nreg>>0xe)&1];
-     if(noiseacc<=0) goto rea2;
-      totalout = wlookup2[tcout+noiseout+RawDALatch];
-    } /* noiseacc<=0 */
+     if(lq_noiseacc<=0) goto rea2;
+      totalout = wlookup2[lq_tcout+noiseout+RawDALatch];
+    } /* lq_noiseacc<=0 */
   } /* for(V=... */
 }
   else if(inie[0])
@@ -897,18 +897,18 @@ static void RDoTriangleNoisePCMLQ(void)
     {
      Wave[V>>4]+=totalout;
 
-     triacc-=inie[0];
+     lq_triacc-=inie[0];
 
-     if(triacc<=0)
+     if(lq_triacc<=0)
      {
       area:
-      triacc+=freq[0]; //t;
+      lq_triacc+=freq[0]; //t;
       tristep=(tristep+1)&0x1F;
-      if(triacc<=0) goto area;
-      tcout=(tristep&0xF);
-      if(!(tristep&0x10)) tcout^=0xF;
-      tcout=tcout*3;
-      totalout = wlookup2[tcout+noiseout+RawDALatch];
+      if(lq_triacc<=0) goto area;
+      lq_tcout=(tristep&0xF);
+      if(!(tristep&0x10)) lq_tcout^=0xF;
+      lq_tcout=lq_tcout*3;
+      totalout = wlookup2[lq_tcout+noiseout+RawDALatch];
      }
     }
   }
@@ -917,22 +917,22 @@ static void RDoTriangleNoisePCMLQ(void)
     for(V=start;V<end;V++)
     {
      Wave[V>>4]+=totalout;
-     noiseacc-=inie[1];
-     if(noiseacc<=0)
+     lq_noiseacc-=inie[1];
+     if(lq_noiseacc<=0)
      {
       area2:
          //used to be added <<(16+2) when the noise table
          //values were half.
       if(PAL)
-        noiseacc+=NoiseFreqTablePAL[PSG[0xE]&0xF]<<(16+1);
+        lq_noiseacc+=NoiseFreqTablePAL[PSG[0xE]&0xF]<<(16+1);
 	  else
-        noiseacc+=NoiseFreqTableNTSC[PSG[0xE]&0xF]<<(16+1);
+        lq_noiseacc+=NoiseFreqTableNTSC[PSG[0xE]&0xF]<<(16+1);
       nreg=(nreg<<1)+(((nreg>>nshift)^(nreg>>14))&1);
       nreg&=0x7fff;
       noiseout=amptab[(nreg>>0xe)&1];
-      if(noiseacc<=0) goto area2;
-      totalout = wlookup2[tcout+noiseout+RawDALatch];
-     } /* noiseacc<=0 */
+      if(lq_noiseacc<=0) goto area2;
+      totalout = wlookup2[lq_tcout+noiseout+RawDALatch];
+     } /* lq_noiseacc<=0 */
     }
   }
   else
@@ -1368,7 +1368,35 @@ SFORMAT FCEUSND_STATEINFO[]={
  { &DMCAddressLatch, 1, "5ADL"},
  { &DMCFormat, 1, "5FMT"},
  { &RawDALatch, 1, "RWDA"},
- { 0 }
+ //these are important for smooth sound after loading state
+ { &sqacc[0], sizeof(sqacc[0]) | FCEUSTATE_RLSB, "SAC1" },
+ { &sqacc[1], sizeof(sqacc[1]) | FCEUSTATE_RLSB, "SAC2" },
+ { &RectDutyCount[0], sizeof(RectDutyCount[0]) | FCEUSTATE_RLSB, "RCD1"},
+ { &RectDutyCount[1], sizeof(RectDutyCount[1]) | FCEUSTATE_RLSB, "RCD2"},
+ { &tristep, sizeof(tristep) | FCEUSTATE_RLSB, "TRIS"},
+ { &lq_triacc, sizeof(lq_triacc) | FCEUSTATE_RLSB, "TACC" },
+ { &lq_noiseacc, sizeof(lq_noiseacc) | FCEUSTATE_RLSB, "NACC" },
+
+ //less important but still necessary
+ { &ChannelBC[0], sizeof(ChannelBC[0]) | FCEUSTATE_RLSB, "CBC1" },
+ { &ChannelBC[1], sizeof(ChannelBC[1]) | FCEUSTATE_RLSB, "CBC2" },
+ { &ChannelBC[2], sizeof(ChannelBC[2]) | FCEUSTATE_RLSB, "CBC3" },
+ { &ChannelBC[3], sizeof(ChannelBC[3]) | FCEUSTATE_RLSB, "CBC4" },
+ { &ChannelBC[4], sizeof(ChannelBC[4]) | FCEUSTATE_RLSB, "CBC5" },
+ { &soundtimestamp, sizeof(soundtimestamp) | FCEUSTATE_RLSB, "SNTS" },
+ { &soundtsoffs, sizeof(soundtsoffs) | FCEUSTATE_RLSB, "TSOF"},
+ { &wlcount[0], sizeof(wlcount[0]) | FCEUSTATE_RLSB, "WLC1" },
+ { &wlcount[1], sizeof(wlcount[1]) | FCEUSTATE_RLSB, "WLC2" },
+ { &wlcount[2], sizeof(wlcount[2]) | FCEUSTATE_RLSB, "WLC3" },
+ { &wlcount[3], sizeof(wlcount[3]) | FCEUSTATE_RLSB, "WLC4" },
+ { &sexyfilter_acc1, sizeof(sexyfilter_acc1) | FCEUSTATE_RLSB, "FAC1" },
+ { &sexyfilter_acc2, sizeof(sexyfilter_acc2) | FCEUSTATE_RLSB, "FAC2" },
+ { &lq_tcout, sizeof(lq_tcout) | FCEUSTATE_RLSB, "TCOU"},
+ { &sexyfilter2_acc, sizeof(sexyfilter2_acc) | FCEUSTATE_RLSB, "FAC3" },
+
+ //wave buffer is used for filtering, only need first 17 values from it
+ { &Wave, 24 * sizeof(int32), "WAVE"},
+{ 0 }
 };
 
 void FCEUSND_SaveState(void)

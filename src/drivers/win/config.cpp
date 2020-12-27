@@ -79,6 +79,7 @@ extern int palbrightness;
 extern bool paldeemphswap;
 extern int RAMInitOption;
 extern int RAMInitSeed;
+extern int RunAheadFrames;
 
 extern TASEDITOR_CONFIG taseditorConfig;
 extern char* recentProjectsArray[];
@@ -195,6 +196,7 @@ static CFGSTRUCT fceuconfig[] =
 	AC(dendy),
 	AC(RAMInitOption),
 	AC(RAMInitSeed),
+	AC(RunAheadFrames),
 	AC(postrenderscanlines),
 	AC(vblankscanlines),
 	AC(overclock_enabled),
@@ -538,5 +540,8 @@ void LoadConfig(const char *filename)
 		romNameWhenClosingEmulator[0] = 0;
 
 	//-----------------------------------
+
+	//validate that RunAhead is within range of allowed values
+	SetRunAheadFrames(GetRunAheadFrames());
 }
 
