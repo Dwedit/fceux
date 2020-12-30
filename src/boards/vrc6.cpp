@@ -37,12 +37,12 @@ static int32 cvbc[3];
 static int32 vcount[3];
 static int32 dcount[2];
 
-int32 vrc6_saw1phaseacc = 0;
-uint8 vrc6_saw_b3 = 0;
-int32 vrc6_saw_phaseacc = 0;
-uint32 vrc6_saw_duff = 0;
-uint8 vrc6_sawhq_b3 = 0;
-int32 vrc6_sawhq_phaseacc = 0;
+static int32 vrc6_saw1phaseacc = 0;
+static uint8 vrc6_saw_b3 = 0;
+static int32 vrc6_saw_phaseacc = 0;
+static uint32 vrc6_saw_duff = 0;
+static uint8 vrc6_sawhq_b3 = 0;
+static int32 vrc6_sawhq_phaseacc = 0;
 
 
 
@@ -228,11 +228,7 @@ static void DoSawV(void) {
 	cvbc[2] = end;
 
 	if (vpsg2[2] & 0x80) {
-		static int32 vrc6_saw1phaseacc = 0;
 		uint32 freq3;
-		static uint8 vrc6_saw_b3 = 0;
-		static int32 vrc6_saw_phaseacc = 0;
-		static uint32 vrc6_saw_duff = 0;
 
 		freq3 = (vpsg2[1] + ((vpsg2[2] & 15) << 8) + 1);
 
@@ -339,6 +335,13 @@ static void VRC6_ESI(void) {
 	GameExpSound.Fill = VRC6Sound;
 	GameExpSound.HiFill = VRC6SoundHQ;
 	GameExpSound.HiSync = VRC6SyncHQ;
+
+	vrc6_saw1phaseacc = 0;
+	vrc6_saw_b3 = 0;
+	vrc6_saw_phaseacc = 0;
+	vrc6_saw_duff = 0;
+	vrc6_sawhq_b3 = 0;
+	vrc6_sawhq_phaseacc = 0;
 
 	memset(cvbc, 0, sizeof(cvbc));
 	memset(vcount, 0, sizeof(vcount));

@@ -1368,7 +1368,7 @@ SFORMAT FCEUSND_STATEINFO[]={
  { &DMCAddressLatch, 1, "5ADL"},
  { &DMCFormat, 1, "5FMT"},
  { &RawDALatch, 1, "RWDA"},
- //these are important for smooth sound after loading state
+ //these are important for smooth sound after loading state (RunAhead)
  { &sqacc[0], sizeof(sqacc[0]) | FCEUSTATE_RLSB, "SAC1" },
  { &sqacc[1], sizeof(sqacc[1]) | FCEUSTATE_RLSB, "SAC2" },
  { &RectDutyCount[0], sizeof(RectDutyCount[0]) | FCEUSTATE_RLSB, "RCD1"},
