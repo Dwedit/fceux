@@ -242,6 +242,13 @@ static uint32 PlayIndex[8];
 static int32 vcount[8];
 static int32 CVBC;
 
+static SFORMAT N106_SoundState[] = {
+	{ PlayIndex, sizeof(PlayIndex), "PLAY" },
+	{ vcount, sizeof(vcount), "VCNT" },
+	{ &CVBC, sizeof(CVBC), "CVBC" },
+	{ 0 }
+};
+
 #define TOINDEX        (16 + 1)
 
 // 16:15
@@ -351,9 +358,9 @@ static void DoNamcoSound(int32 *Wave, int Count) {
 
 static void Mapper19_StateRestore(int version) {
 	SyncPRG();
-	FixNTAR();
 	FixCRR();
 	SyncMirror();
+	FixNTAR();
 	int x;
 	for (x = 0x40; x < 0x80; x++)
 		FixCache(x, IRAM[x]);
@@ -427,6 +434,7 @@ void Mapper19_Init(CartInfo *info) {
 	AddExState(WRAM, 8192, 0, "WRAM");
 	AddExState(IRAM, 128, 0, "IRAM");
 	AddExState(N106_StateRegs, ~0, 0, 0);
+	AddExState(N106_SoundState, ~0, 0, 0);
 
 	if (info->battery) {
 		info->SaveGame[0] = WRAM;

@@ -111,6 +111,10 @@ static SFORMAT SStateRegs[] =
 {
 	{ &sndcmd, 1, "SCMD" },
 	{ sreg, 14, "SREG" },
+	//For RunAhead
+	{ vcount, sizeof(vcount), "VCNT"},
+	{ dcount, sizeof(dcount), "DCNT"},
+	{ CAYBC, sizeof(CAYBC), "CAYB"},
 	{ 0 }
 };
 
