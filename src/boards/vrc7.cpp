@@ -30,7 +30,6 @@ static uint32 WRAMSIZE;
 
 static int32 dwave = 0;
 static OPLL *VRC7Sound = NULL;
-static OPLL **VRC7Sound_saveptr = &VRC7Sound;
 
 static SFORMAT StateRegs[] =
 {
@@ -43,7 +42,7 @@ static SFORMAT StateRegs[] =
 	{ &IRQLatch, 1, "IRQL" },
 	{ &IRQCount, 4, "IRQC" },
 	{ &CycleCount, 4, "CYCC" },
-	{ (void**)VRC7Sound_saveptr, sizeof(*VRC7Sound) | FCEUSTATE_INDIRECT, "VRC7"  },
+	{ &VRC7Sound, sizeof(*VRC7Sound) | FCEUSTATE_INDIRECT, "VRC7"  },
 	{0}
 };
 
